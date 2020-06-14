@@ -1,0 +1,19 @@
+opam-version: "2.0"
+maintainer: "owlbarn"
+authors: [ "Ta-Chu Calvin Kao" ]
+license: "MIT"
+homepage: "https://github.com/tachukao/owl_ode"
+dev-repo: "git+https://github.com/tachukao/owl_ode.git"
+bug-reports: "https://github.com/tachukao/owl_ode/issues"
+doc: "https://ocaml.xyz"
+build: [
+  ["dune" "build" "-p" name "-j" jobs]
+  ["dune" "runtest" "-p" name "-j" jobs] {with-test}
+]
+depends: [
+  "ocaml" {>= "4.10.0"}
+  "dune" {>= "2.0.0"}
+  "owl" {>= "0.7.0"}
+]
+synopsis: "Owl Batch Matrix Operations"
+description: "Collection of differentiable batch matrix operations"

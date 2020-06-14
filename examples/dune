@@ -1,0 +1,3 @@
+(executables
+ (names bmm cholesky)
+ (libraries bmo owl))
