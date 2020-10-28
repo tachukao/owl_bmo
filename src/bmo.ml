@@ -106,6 +106,13 @@ end
 module AD = struct
   type t = Algodiff.D.t
 
+  let print_dim x =
+    let shp = Arr.shape Algodiff.D.(unpack_arr x) in
+    Array.iter (fun s -> Printf.printf "%i " s) shp;
+    print_newline ();
+    flush_all ()
+
+
   let rec _bmm =
     lazy
       (Algodiff.D.Builder.build_piso
@@ -145,22 +152,21 @@ end
 
 let%test _ =
   let module FD = Owl_algodiff_check.Make (Algodiff.D) in
-  let n_samples = 1000 in
+  let n_samples = 50 in
   let ff x =
     let x1 =
-      Algodiff.D.Maths.get_slice [ []; [ 0; 1000 - 1 ] ] x
-      |> fun x -> Algodiff.D.Maths.reshape x [| 10; 10; 10 |]
+      Algodiff.D.Maths.get_slice [ []; [ 0; 24 - 1 ] ] x
+      |> fun x -> Algodiff.D.Maths.reshape x [| 2; 3; 4 |]
     in
     let x2 =
-      Algodiff.D.Maths.get_slice [ []; [ 1000; -1 ] ] x
-      |> fun x -> Algodiff.D.Maths.reshape x [| 10; 10; 10 |]
+      Algodiff.D.Maths.get_slice [ []; [ 24; -1 ] ] x
+      |> fun x -> Algodiff.D.Maths.reshape x [| 2; 4; 3 |]
     in
     let y = AD.bmm x1 x2 in
     Algodiff.D.Maths.sum' y
   in
-  let samples, directions = FD.generate_test_samples (1, 2000) n_samples in
+  let samples, directions = FD.generate_test_samples (1, 48) n_samples in
   let threshold = 1E-4 in
   let eps = 1E-5 in
-  let directions = Owl.Stats.shuffle directions in
-  let directions = Array.sub directions 0 10 in
   FD.Reverse.check ~threshold ~order:`fourth ~eps ~directions ~f:ff samples |> fst
+  && FD.Forward.check ~threshold ~directions ~f:ff samples |> fst

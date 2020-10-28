@@ -11,5 +11,6 @@ end
 module AD : sig
   type t = Owl.Algodiff.D.t
 
+  val print_dim : t -> unit
   val bmm : t -> t -> t
 end
