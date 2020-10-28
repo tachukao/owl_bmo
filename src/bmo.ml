@@ -121,19 +121,46 @@ module AD = struct
 
            let dr_ab a b _cp ca =
              let open Algodiff.D in
-             bmm !ca (Maths.transpose (primal b)), bmm (Maths.transpose (primal a)) !ca
+             let dim_a = Array.length (shape a) in
+             let dim_b = Array.length (shape b) in
+             ( bmm !ca (Maths.swap (dim_b - 1) (dim_b - 2) (primal b))
+             , bmm (Maths.swap (dim_a - 1) (dim_a - 2) (primal a)) !ca )
 
 
            let dr_a _a b _cp ca =
              let open Algodiff.D in
-             bmm !ca (Maths.transpose (primal b))
+             let dim = Array.length (shape b) in
+             bmm !ca (Maths.swap (dim - 1) (dim - 2) (primal b))
 
 
            let dr_b a _b _cp ca =
              let open Algodiff.D in
-             bmm (Maths.transpose (primal a)) !ca
+             let dim = Array.length (shape a) in
+             bmm (Maths.swap (dim - 1) (dim - 2) (primal a)) !ca
          end : Algodiff.D.Builder.Piso))
 
 
   and bmm x = Stdlib.Lazy.force _bmm x
 end
+
+let%test _ =
+  let module FD = Owl_algodiff_check.Make (Algodiff.D) in
+  let n_samples = 1000 in
+  let ff x =
+    let x1 =
+      Algodiff.D.Maths.get_slice [ []; [ 0; 1000 - 1 ] ] x
+      |> fun x -> Algodiff.D.Maths.reshape x [| 10; 10; 10 |]
+    in
+    let x2 =
+      Algodiff.D.Maths.get_slice [ []; [ 1000; -1 ] ] x
+      |> fun x -> Algodiff.D.Maths.reshape x [| 10; 10; 10 |]
+    in
+    let y = AD.bmm x1 x2 in
+    Algodiff.D.Maths.sum' y
+  in
+  let samples, directions = FD.generate_test_samples (1, 2000) n_samples in
+  let threshold = 1E-4 in
+  let eps = 1E-5 in
+  let directions = Owl.Stats.shuffle directions in
+  let directions = Array.sub directions 0 10 in
+  FD.Reverse.check ~threshold ~order:`fourth ~eps ~directions ~f:ff samples |> fst

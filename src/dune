@@ -1,4 +1,7 @@
 (library
  (name bmo)
  (public_name owl-bmo)
- (libraries owl))
+ (libraries owl)
+ (inline_tests)
+ (preprocess
+  (pps ppx_inline_test)))
